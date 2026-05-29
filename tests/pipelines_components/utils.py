@@ -116,6 +116,25 @@ def get_workflow_phase(
     return None
 
 
+def _raise_if_unschedulable(
+    admin_client: DynamicClient,
+    namespace: str,
+    run_id: str,
+) -> None:
+    """Raise RuntimeError immediately if any workflow node is stuck as Unschedulable."""
+    for workflow in Workflow.get(client=admin_client, namespace=namespace):
+        if workflow.instance.metadata.get("labels", {}).get("pipeline/runid") != run_id:
+            continue
+        nodes = workflow.instance.get("status", {}).get("nodes", {})
+        for node in nodes.values():
+            if node.get("phase") == "Pending" and "Unschedulable" in node.get("message", ""):
+                display_name = node.get("displayName", "unknown")
+                raise RuntimeError(
+                    f"Pipeline run {run_id} cannot be scheduled: "
+                    f"node '{display_name}' is unschedulable — {node['message']}"
+                )
+
+
 def wait_for_pipeline_run(
     admin_client: DynamicClient,
     namespace: str,
@@ -138,6 +157,7 @@ def wait_for_pipeline_run(
             LOGGER.info(f"Pipeline run {run_id}: {phase}")
             if phase and phase in WORKFLOW_TERMINAL_PHASES:
                 return phase
+            _raise_if_unschedulable(admin_client=admin_client, namespace=namespace, run_id=run_id)
     except TimeoutExpiredError as err:
         msg = f"Pipeline run {run_id} did not complete within {timeout}s"
         LOGGER.error(msg)
