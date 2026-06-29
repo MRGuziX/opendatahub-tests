@@ -7,10 +7,8 @@ from ocp_resources.data_science_pipelines_application import DataSciencePipeline
 from ocp_resources.namespace import Namespace
 
 from tests.pipelines_components.constants import (
-    AUTOML_LABEL_COLUMN,
     AUTOML_PIPELINE_YAML,
-    AUTOML_TASK_TYPE,
-    AUTOML_TOP_N,
+    AUTOML_TASK_CONFIGS,
     AUTOML_TRAIN_DATA_FILE_KEY,
     DSPA_READY_BUFFER_SECONDS,
     DSPA_S3_BUCKET,
@@ -41,7 +39,7 @@ def _validate_automl_env() -> None:
         LOGGER.info("AUTOML_PIPELINE_YAML is not set — using managed pipeline mode")
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def automl_managed_pipeline(
     dspa: DataSciencePipelinesApplication,
     dspa_api_url: str,
@@ -61,7 +59,7 @@ def automl_managed_pipeline(
     )
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def automl_pipeline_yaml_path() -> str | None:
     """Resolve the AutoML pipeline YAML to a local file path. None in managed mode."""
     if not AUTOML_PIPELINE_YAML:
@@ -69,7 +67,7 @@ def automl_pipeline_yaml_path() -> str | None:
     return resolve_pipeline_yaml(value=AUTOML_PIPELINE_YAML)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def automl_pipeline_id(
     dspa_api_url: str,
     dspa_auth_headers: dict[str, str],
@@ -99,7 +97,7 @@ def automl_pipeline_id(
         )
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def automl_run_id(
     dspa_api_url: str,
     dspa_auth_headers: dict[str, str],
@@ -107,15 +105,18 @@ def automl_run_id(
     automl_pipeline_id: str,
     automl_managed_pipeline: dict[str, str] | None,
     pipelines_namespace: Namespace,
+    task_type: str,
 ) -> Generator[str, Any, Any]:
     """Create a pipeline run and yield the run ID. Deletes the run on teardown."""
+    task_config = AUTOML_TASK_CONFIGS[task_type]
+
     parameters: dict[str, Any] = {
         "train_data_secret_name": DSPA_S3_SECRET,
         "train_data_bucket_name": DSPA_S3_BUCKET,
         "train_data_file_key": AUTOML_TRAIN_DATA_FILE_KEY,
-        "label_column": AUTOML_LABEL_COLUMN,
-        "task_type": AUTOML_TASK_TYPE,
-        "top_n": AUTOML_TOP_N,
+        "label_column": task_config["label_column"],
+        "task_type": task_config["task_type"],
+        "top_n": task_config["top_n"],
     }
 
     if automl_managed_pipeline is not None:

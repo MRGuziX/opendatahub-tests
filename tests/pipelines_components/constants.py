@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Any
 
 
 def _load_env_file(env_path: Path) -> None:
@@ -34,13 +35,33 @@ AUTOML_PIPELINE_YAML: str = os.environ.get("AUTOML_PIPELINE_YAML", "")
 
 # AutoML S3 source — CSV is downloaded from this external S3 path into DSPA MinIO
 AUTOML_S3_BUCKET: str = os.environ.get("AUTOML_S3_BUCKET", "")
-AUTOML_S3_TRAIN_DATA_KEY: str = os.getenv("AUTOML_S3_TRAIN_DATA_KEY", "datasets/regression/houses.csv")
+
+# AutoML task configurations for parametrized testing
+AUTOML_TASK_CONFIGS: dict[str, dict[str, Any]] = {
+    "regression": {
+        "s3_train_data_key": "datasets/regression/regression.csv",
+        "label_column": "price",
+        "task_type": "regression",
+        "top_n": 1,
+    },
+    "classification": {
+        "s3_train_data_key": "datasets/classification/classification.csv",
+        "label_column": "target",
+        "task_type": "binary",
+        "top_n": 1,
+    },
+}
+
+# Determine default task configuration from environment or default to regression
+_DEFAULT_TASK = os.getenv("AUTOML_TASK_TYPE", "regression")
+_TASK_CONFIG = AUTOML_TASK_CONFIGS.get(_DEFAULT_TASK, AUTOML_TASK_CONFIGS["regression"])
 
 # AutoML pipeline parameters — AUTOML_TRAIN_DATA_FILE_KEY is the destination key in DSPA MinIO
 AUTOML_TRAIN_DATA_FILE_KEY: str = os.getenv("AUTOML_TRAIN_DATA_FILE_KEY", "automl-smoke/train.csv")
-AUTOML_LABEL_COLUMN: str = os.getenv("AUTOML_LABEL_COLUMN", "median_house_value")
-AUTOML_TASK_TYPE: str = os.getenv("AUTOML_TASK_TYPE", "regression")
-AUTOML_TOP_N: int = int(os.getenv("AUTOML_TOP_N", "1"))
+AUTOML_S3_TRAIN_DATA_KEY: str = os.getenv("AUTOML_S3_TRAIN_DATA_KEY", _TASK_CONFIG["s3_train_data_key"])
+AUTOML_LABEL_COLUMN: str = os.getenv("AUTOML_LABEL_COLUMN", _TASK_CONFIG["label_column"])
+AUTOML_TASK_TYPE: str = os.getenv("AUTOML_TASK_TYPE", _TASK_CONFIG["task_type"])
+AUTOML_TOP_N: int = int(os.getenv("AUTOML_TOP_N", str(_TASK_CONFIG["top_n"])))
 
 # Timeouts (seconds)
 AUTOML_PIPELINE_TIMEOUT: int = int(os.getenv("AUTOML_PIPELINE_TIMEOUT", "1800"))

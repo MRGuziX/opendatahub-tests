@@ -22,7 +22,6 @@ from timeout_sampler import TimeoutExpiredError
 
 from tests.pipelines_components.constants import (
     AUTOML_S3_BUCKET,
-    AUTOML_S3_TRAIN_DATA_KEY,
     AUTOML_TRAIN_DATA_FILE_KEY,
     DSPA_MINIO_IMAGE,
     DSPA_NAME,
@@ -244,15 +243,26 @@ def dspa_s3_credentials(
     return secret
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def automl_train_data(
     admin_client: DynamicClient,
     pipelines_namespace: Namespace,
     dspa_s3_credentials: Secret,
+    task_type: str,
 ) -> str:
-    """Download AutoML training CSV from external S3 and upload to DSPA MinIO."""
+    """Download AutoML training CSV from external S3 and upload to DSPA MinIO.
+
+    Picks S3 key based on task_type parameter (regression or classification).
+    """
+    env_var = f"AUTOML_{task_type.upper()}_S3_TRAIN_DATA_KEY"
+    src_key_value = os.environ.get(env_var)
+    assert src_key_value, (
+        f"Environment variable '{env_var}' is not set. "
+        f"Set it in .env or Jenkins Vault to provide the S3 key for {task_type} training data."
+    )
+
     src_bucket = shlex.quote(s=AUTOML_S3_BUCKET)
-    src_key = shlex.quote(s=AUTOML_S3_TRAIN_DATA_KEY)
+    src_key = shlex.quote(s=src_key_value)
     dst_bucket = shlex.quote(s=DSPA_S3_BUCKET)
     dst_key = shlex.quote(s=AUTOML_TRAIN_DATA_FILE_KEY)
 
