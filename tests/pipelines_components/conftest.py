@@ -243,11 +243,33 @@ def dspa_s3_credentials(
     return secret
 
 
+EXTERNAL_S3_SECRET: str = "external-s3-credentials"
+
+
+@pytest.fixture(scope="class")
+def external_s3_secret(
+    admin_client: DynamicClient,
+    pipelines_namespace: Namespace,
+) -> Generator[Secret, Any, Any]:
+    """Transient secret holding external AWS S3 credentials for data upload pods."""
+    with Secret(
+        client=admin_client,
+        name=EXTERNAL_S3_SECRET,
+        namespace=pipelines_namespace.name,
+        string_data={
+            "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID", ""),
+            "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
+        },
+    ) as secret:
+        yield secret
+
+
 @pytest.fixture(scope="function")
 def automl_train_data(
     admin_client: DynamicClient,
     pipelines_namespace: Namespace,
     dspa_s3_credentials: Secret,
+    external_s3_secret: Secret,
     task_type: str,
 ) -> str:
     """Download AutoML training CSV from external S3 and upload to DSPA MinIO.
@@ -258,7 +280,7 @@ def automl_train_data(
     src_key_value = os.environ.get(env_var)
     assert src_key_value, (
         f"Environment variable '{env_var}' is not set. "
-        f"Set it in .env or Jenkins Vault to provide the S3 key for {task_type} training data."
+        f"Set it in .env or shell to provide the S3 key for {task_type} training data."
     )
 
     src_bucket = shlex.quote(s=AUTOML_S3_BUCKET)
@@ -294,8 +316,14 @@ def automl_train_data(
                 "securityContext": MINIO_UPLOADER_SECURITY_CONTEXT,
                 "env": [
                     {"name": "SRC_ENDPOINT", "value": src_endpoint},
-                    {"name": "AWS_ACCESS_KEY_ID", "value": os.environ.get("AWS_ACCESS_KEY_ID", "")},
-                    {"name": "AWS_SECRET_ACCESS_KEY", "value": os.environ.get("AWS_SECRET_ACCESS_KEY", "")},
+                    {
+                        "name": "AWS_ACCESS_KEY_ID",
+                        "valueFrom": {"secretKeyRef": {"name": EXTERNAL_S3_SECRET, "key": "AWS_ACCESS_KEY_ID"}},
+                    },
+                    {
+                        "name": "AWS_SECRET_ACCESS_KEY",
+                        "valueFrom": {"secretKeyRef": {"name": EXTERNAL_S3_SECRET, "key": "AWS_SECRET_ACCESS_KEY"}},
+                    },
                     {"name": "DST_ENDPOINT", "value": minio_endpoint},
                     {
                         "name": "DST_ACCESS_KEY",

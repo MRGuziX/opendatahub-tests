@@ -52,16 +52,8 @@ AUTOML_TASK_CONFIGS: dict[str, dict[str, Any]] = {
     },
 }
 
-# Determine default task configuration from environment or default to regression
-_DEFAULT_TASK = os.getenv("AUTOML_TASK_TYPE", "regression")
-_TASK_CONFIG = AUTOML_TASK_CONFIGS.get(_DEFAULT_TASK, AUTOML_TASK_CONFIGS["regression"])
-
 # AutoML pipeline parameters — AUTOML_TRAIN_DATA_FILE_KEY is the destination key in DSPA MinIO
 AUTOML_TRAIN_DATA_FILE_KEY: str = os.getenv("AUTOML_TRAIN_DATA_FILE_KEY", "automl-smoke/train.csv")
-AUTOML_S3_TRAIN_DATA_KEY: str = os.getenv("AUTOML_S3_TRAIN_DATA_KEY", _TASK_CONFIG["s3_train_data_key"])
-AUTOML_LABEL_COLUMN: str = os.getenv("AUTOML_LABEL_COLUMN", _TASK_CONFIG["label_column"])
-AUTOML_TASK_TYPE: str = os.getenv("AUTOML_TASK_TYPE", _TASK_CONFIG["task_type"])
-AUTOML_TOP_N: int = int(os.getenv("AUTOML_TOP_N", str(_TASK_CONFIG["top_n"])))
 
 # Timeouts (seconds)
 AUTOML_PIPELINE_TIMEOUT: int = int(os.getenv("AUTOML_PIPELINE_TIMEOUT", "1800"))
