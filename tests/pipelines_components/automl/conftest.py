@@ -39,7 +39,7 @@ def _validate_automl_env() -> None:
         LOGGER.info("AUTOML_PIPELINE_YAML is not set — using managed pipeline mode")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def automl_managed_pipeline(
     dspa: DataSciencePipelinesApplication,
     dspa_api_url: str,
@@ -59,7 +59,7 @@ def automl_managed_pipeline(
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def automl_pipeline_yaml_path() -> str | None:
     """Resolve the AutoML pipeline YAML to a local file path. None in managed mode."""
     if not AUTOML_PIPELINE_YAML:
@@ -67,7 +67,7 @@ def automl_pipeline_yaml_path() -> str | None:
     return resolve_pipeline_yaml(value=AUTOML_PIPELINE_YAML)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def automl_pipeline_id(
     dspa_api_url: str,
     dspa_auth_headers: dict[str, str],
