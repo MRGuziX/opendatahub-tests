@@ -49,27 +49,26 @@ to fall back to manual YAML upload. URLs are downloaded automatically at test st
 
 ### AutoML
 
-The AutoML test is parametrized by `task_type` and runs both regression and classification.
-Each task type uses a separate S3 dataset and label column configured via env vars.
+The AutoML tabular test is parametrized by `task_type` (regression, classification, multiclass).
 
-The pipeline accepts these `task_type` values: `"binary"`, `"multiclass"`, `"regression"`.
+The tabular pipeline accepts `task_type` values: `"binary"`, `"multiclass"`, `"regression"`.
 
 ```bash
-# Run all AutoML tests (regression + classification)
+# Run all AutoML tests (regression + classification + multiclass)
 pytest tests/pipelines_components/automl/ -v
 
-# Run only regression
+# Run only one task type
 pytest tests/pipelines_components/automl/ -k regression
-
-# Run only classification
 pytest tests/pipelines_components/automl/ -k classification
+pytest tests/pipelines_components/automl/ -k multiclass
 ```
 
 | Variable | Description | Default |
 | --- | --- | --- |
 | `AUTOML_S3_BUCKET` | External S3 bucket with training data | _(required)_ |
 | `AUTOML_REGRESSION_S3_TRAIN_DATA_KEY` | S3 key for regression training CSV | `datasets/regression/regression.csv` |
-| `AUTOML_CLASSIFICATION_S3_TRAIN_DATA_KEY` | S3 key for classification training CSV | `datasets/classification/classification.csv` |
+| `AUTOML_CLASSIFICATION_S3_TRAIN_DATA_KEY` | S3 key for binary classification training CSV | _(required)_ |
+| `AUTOML_MULTICLASS_S3_TRAIN_DATA_KEY` | S3 key for multiclass classification training CSV | _(required)_ |
 | `AUTOML_TRAIN_DATA_FILE_KEY` | Destination key in DSPA MinIO | `automl-smoke/train.csv` |
 | `AUTOML_PIPELINE_YAML` | Legacy: path or URL to pipeline YAML | _(empty = managed mode)_ |
 | `AUTOML_PIPELINE_TIMEOUT` | Max wait for pipeline completion (sec) | `1800` |

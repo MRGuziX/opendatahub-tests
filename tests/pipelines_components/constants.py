@@ -50,6 +50,12 @@ AUTOML_TASK_CONFIGS: dict[str, dict[str, Any]] = {
         "task_type": "binary",
         "top_n": 1,
     },
+    "multiclass": {
+        "s3_train_data_key": "datasets/classification/multiclass.csv",
+        "label_column": "target",
+        "task_type": "multiclass",
+        "top_n": 1,
+    },
 }
 
 # AutoML pipeline parameters — AUTOML_TRAIN_DATA_FILE_KEY is the destination key in DSPA MinIO

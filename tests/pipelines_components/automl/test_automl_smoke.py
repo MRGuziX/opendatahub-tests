@@ -15,7 +15,7 @@ from tests.pipelines_components.utils import (
 class TestAutoMLSmoke:
     """AutoML pipeline smoke tests using AutoGluon Tabular Training from pipelines-components."""
 
-    @pytest.mark.parametrize("task_type", ["regression", "classification"], ids=["regression", "classification"])
+    @pytest.mark.parametrize("task_type", ["regression", "classification", "multiclass"], ids=["regression", "classification", "multiclass"])
     def test_automl_pipeline_completes(
         self,
         task_type: str,
